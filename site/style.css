@@ -23,7 +23,8 @@ table {
     margin: auto;
     left: auto;
     right: auto;
-    border: 1px solid grey;
+    border: 0px solid grey;
+    font-size: 80%;
 }
 
 tr:nth-child(even) {
@@ -31,15 +32,21 @@ tr:nth-child(even) {
 }
 
 td {
-    width: 130px;
-    text-align: right;
+    text-align: left;
 }
 
 th {
     text-align: center;
     color: white;
-    background-color: black;
+    background-color: #999;
+    
 }
+
+th, td {
+    padding: .5em;
+}
+
 td:nth-child(1) {
-    text-align: center
+    text-align: center;
+    text-transform: uppercase;
 }

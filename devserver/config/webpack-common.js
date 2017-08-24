@@ -8,6 +8,7 @@ module.exports = function(entries, output, includes) {
     loader: 'babel',
     query: {
       presets: ['babel-preset-es2015', "babel-preset-stage-1"].map(require.resolve),
+      plugins: ['babel-plugin-transform-runtime'].map(require.resolve),
       cacheDirectory: true
     },
     include: includes
