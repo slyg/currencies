@@ -16,49 +16,101 @@ const tableLayout = `
 `
 
 // rowView :: RowViewModel -> String
-const rowView = ({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk }) => `
-  <tr id="currencyPair-${name}">
+const rowView = ({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk }) => {
+  const rowContainer = document.createElement('tr');
+  rowContainer.setAttribute('id', `currencyPair-${name}`)
+  rowContainer.innerHTML = `
     <td>${name}</td>
     <td>${bestBid}</td>
     <td>${lastChangeBid}</td>
     <td>${bestAsk}</td>
     <td>${lastChangeAsk}</td>
-    <td><span id="midPriceHistory-${name}"></span></td>
-  </tr>
-`
+    <td class="midPriceHistory"></td>
+  `
+  return rowContainer
+}
+
+// updateSparkline :: Void
+const updateSparkline = (rowElm, midPriceHistory) => {
+  const target = rowElm.querySelector('.midPriceHistory')
+  Sparkline.draw(target, midPriceHistory)
+}
+
+// appendInside :: HTMLElement
+const appendInside = container => row => {
+  const newRowElm = rowView(row)
+  const elm = container.appendChild(newRowElm)
+  
+  updateSparkline(newRowElm, row.midPriceHistory)
+  
+  return newRowElm
+}
+
+// updateInside :: HTMLElement
+const updateInside = container => (previousRowElm, row) => {
+  const newRowElm = rowView(row)
+  const elm = container.replaceChild(newRowElm, previousRowElm)
+  
+  updateSparkline(newRowElm, row.midPriceHistory)
+  
+  return newRowElm
+}
+
+// sortRowsFrom :: (HTMLElement, HTMLElement) -> Array String -> Void
+const sortRowsFrom = (container, domStateRef) => namesOrder => {
+  namesOrder.forEach(name => 
+    container.appendChild( domStateRef.get(name) )
+  )
+}
 
 // compareCurrencyBy :: String -> (RowViewModel, RowViewModel) -> Number
 const compareCurrencyBy = attr => (dataA, dataB) =>
   dataB[attr] - dataA[attr]
 
 // selector :: Model -> ViewModel
-const selector = ({ currencyPairs, order }) =>
-  Array.from(currencyPairs.values())
-    .sort( compareCurrencyBy(order) )
-
-/**
- * renderRows :: HTMLElement -> Model -> void
- *
- * This function will first "brute-force" render the rows
- * and trigger the sparklines update in a second time,
- * assuming innerHTML setter is blocking js execution.
- */
-const renderRows = container => state => {
-  const viewModel = selector(state)
+const selector = ({ currencyPairs, order, lastUpdatedPair }) => ({
+  lastUpdatedPair,
   
-  container.innerHTML = 
-    selector(state).map( rowView ).join('')
+  namesOrder:
+    Array.from(currencyPairs.values())
+      .sort( compareCurrencyBy(order) )
+      .map( pair => pair.name ),
     
-  viewModel.forEach( ({ name, midPriceHistory }) => {
-    const target = document.getElementById(`midPriceHistory-${name}`)
-    Sparkline.draw(target, midPriceHistory)
-  })
+  lastUpdatedPairRowData:
+    currencyPairs.get(lastUpdatedPair)
+})
+
+// renderRows :: HTMLElement -> Function
+const renderRows = function(container) {
+  
+  let domState = new Map()
+  
+  const append = appendInside(container)
+  const update = updateInside(container)
+  const sortRows = sortRowsFrom(container, domState)
+  
+  // :: Void
+  return state => {
+    
+    const viewModel = selector(state)
+    
+    const { lastUpdatedPair, lastUpdatedPairRowData } = viewModel
+
+    if (domState.has(lastUpdatedPair)) {
+      const elm = update(domState.get(lastUpdatedPair), lastUpdatedPairRowData)
+      domState.set(lastUpdatedPair, elm)
+    } else {
+      const elm = append(lastUpdatedPairRowData)
+      domState.set(lastUpdatedPair, elm)
+    }
+    
+    sortRows(viewModel.namesOrder)
+  }
 }
 
 // Assuming the js bundle is injected at the end of <body>.
 document.getElementById('currency-pairs-table').innerHTML =
   tableLayout
 
-// Next calls will trigger the rows re-render
 export const render = 
   renderRows(document.getElementById('rows-container'))
