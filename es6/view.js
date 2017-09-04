@@ -1,58 +1,83 @@
-// tableLayout :: String
+const ROW_HEIGTH = 30 // px
+const ROW_TOPPAD = 50 // px
+
 const tableLayout = `
   <table>
     <thead>
       <tr>
-        <th>Currency Pair</th>
-        <th>Current Best Bid</th>
-        <th>Last Change Bid Change Amount ↓</th>
-        <th>Current Best Ask</th>
-        <th>Last Best Ask Change Amount</th>
-        <th>Mid Price History</th>
+        <th><span>Currency Pair</span></th>
+        <th><span>Current Best Bid</span></th>
+        <th><span>Last Change Bid Change Amount ↓</span></th>
+        <th><span>Current Best Ask</span></th>
+        <th><span>Last Best Ask Change Amount</span></th>
+        <th><span>Mid Price History</span></th>
       </tr>
     </thead>
     <tbody id="rows-container"></tbody>
   </table>
 `
 
-// rowView :: RowViewModel -> String
-const rowView = ({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk }) => `
-  <tr id="currencyPair-${name}">
-    <td>${name}</td>
-    <td>${bestBid}</td>
-    <td>${lastChangeBid}</td>
-    <td>${bestAsk}</td>
-    <td>${lastChangeAsk}</td>
-    <td><span id="midPriceHistory-${name}"></span></td>
-  </tr>
+const rowContent = ({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk }) => `
+  <td><span>${name}</span></td>
+  <td><span>${bestBid}</span></td>
+  <td><span>${lastChangeBid}</span></td>
+  <td><span>${bestAsk}</span></td>
+  <td><span>${lastChangeAsk}</span></td>
+  <td><span id="midPriceHistory-${name}"></span></td>
 `
 
-// compareCurrencyBy :: String -> (RowViewModel, RowViewModel) -> Number
+const createRow = ({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk }) => {
+  const row = document.createElement('tr')
+  row.setAttribute('id', `row-${name}`)
+  row.innerHTML = rowContent({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk })
+  return row
+}
+
+const updateRow = (row, { name, bestBid, lastChangeBid, bestAsk, lastChangeAsk }) => {
+  row.innerHTML = rowContent({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk })
+  return row
+}
+
 const compareCurrencyBy = attr => (dataA, dataB) =>
   dataB[attr] - dataA[attr]
 
-// selector :: Model -> ViewModel
-const selector = ({ currencyPairs, order }) =>
+const orderFrom = ({ currencyPairs, order }) =>
   Array.from(currencyPairs.values())
     .sort( compareCurrencyBy(order) )
+    .map( pair => pair.name )
 
-/**
- * renderRows :: HTMLElement -> Model -> void
- *
- * This function will first "brute-force" render the rows
- * and trigger the sparklines update in a second time,
- * assuming innerHTML setter is blocking js execution.
- */
-const renderRows = container => state => {
-  const viewModel = selector(state)
+const renderRows = container =>  {
   
-  container.innerHTML = 
-    selector(state).map( rowView ).join('')
+  const domMap = new Map()
+  
+  return state => {
+  
+    const { lastUpdatedPair, currencyPairs } = state
+    const pair = currencyPairs.get(lastUpdatedPair)
     
-  viewModel.forEach( ({ name, midPriceHistory }) => {
+    // Update or create a row
+    if (domMap.has(lastUpdatedPair)) {
+      const existingRow = domMap.get(lastUpdatedPair)
+      updateRow(domMap.get(lastUpdatedPair), pair)
+    } else {
+      const newRow = createRow(pair)
+      domMap.set(lastUpdatedPair, newRow)
+      container.appendChild(newRow)
+    }
+    
+    // Update vertical positions
+    orderFrom(state).forEach( (orderVal, i) => {
+      domMap.get(orderVal).style.top = `${(i * ROW_HEIGTH) + ROW_TOPPAD}px`
+    })
+    
+    const { midPriceHistory, name } = pair
+    
     const target = document.getElementById(`midPriceHistory-${name}`)
     Sparkline.draw(target, midPriceHistory)
-  })
+    
+    keysOrder.map(key => domMap.get(key))
+
+  }
 }
 
 // Assuming the js bundle is injected at the end of <body>.
