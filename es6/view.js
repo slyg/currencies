@@ -19,13 +19,14 @@ const tableLayout = `
 const rowView = ({ name, bestBid, lastChangeBid, bestAsk, lastChangeAsk }) => {
   const rowContainer = document.createElement('tr');
   rowContainer.setAttribute('id', `currencyPair-${name}`)
+  rowContainer.setAttribute('class', `row`)
   rowContainer.innerHTML = `
-    <td>${name}</td>
-    <td>${bestBid}</td>
-    <td>${lastChangeBid}</td>
-    <td>${bestAsk}</td>
-    <td>${lastChangeAsk}</td>
-    <td class="midPriceHistory"></td>
+    <td><span>${name}</span></td>
+    <td><span>${bestBid}</span></td>
+    <td><span>${lastChangeBid}</span></td>
+    <td><span>${bestAsk}</span></td>
+    <td><span>${lastChangeAsk}</span></td>
+    <td><span class="midPriceHistory"></span></td>
   `
   return rowContainer
 }
@@ -39,9 +40,13 @@ const updateSparkline = (rowElm, midPriceHistory) => {
 // appendInside :: HTMLElement
 const appendInside = container => row => {
   const newRowElm = rowView(row)
-  const elm = container.appendChild(newRowElm)
   
+  container.appendChild(newRowElm)
   updateSparkline(newRowElm, row.midPriceHistory)
+  
+  setTimeout(() => {
+    newRowElm.setAttribute('class', `row here`)
+  }, 0)
   
   return newRowElm
 }
@@ -49,9 +54,13 @@ const appendInside = container => row => {
 // updateInside :: HTMLElement
 const updateInside = container => (previousRowElm, row) => {
   const newRowElm = rowView(row)
-  const elm = container.replaceChild(newRowElm, previousRowElm)
   
+  container.replaceChild(newRowElm, previousRowElm)
   updateSparkline(newRowElm, row.midPriceHistory)
+  
+  setTimeout(() => {
+    newRowElm.setAttribute('class', `row here`)
+  }, 0)
   
   return newRowElm
 }

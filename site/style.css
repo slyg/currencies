@@ -31,10 +31,6 @@ tr:nth-child(even) {
     background-color: #f0f0f0;
 }
 
-td {
-    text-align: left;
-}
-
 th {
     text-align: center;
     color: white;
@@ -42,11 +38,35 @@ th {
     
 }
 
-th, td {
-    padding: .5em;
+th {
+    padding: 1em;
+}
+
+td {
+    text-align: left;
+    padding: 0;
+    height: 2.6em;
 }
 
 td:nth-child(1) {
     text-align: center;
     text-transform: uppercase;
+}
+
+
+/* Transition effects */
+
+.row span {
+  background-color: #ff0;
+  display: block;
+  height: 1em;
+  opacity: 0;
+  overflow: hidden;
+  padding: .8em;
+  transition: all .5s;
+}
+
+.row.here span {
+  background-color: transparent;
+  opacity: 1;
 }
